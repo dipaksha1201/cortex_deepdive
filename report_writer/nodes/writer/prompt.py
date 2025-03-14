@@ -1,0 +1,182 @@
+query_writer_instructions_web="""You are an expert technical writer crafting targeted web search queries that will gather comprehensive information for writing a technical report section.
+
+<Report topic>
+{topic}
+</Report topic>
+
+<Section topic>
+{section_topic}
+</Section topic>
+
+<Task>
+Your goal is to generate {number_of_queries} search queries that will help gather comprehensive information above the section topic. 
+
+The queries should:
+
+1. Be related to the topic 
+2. Examine different aspects of the topic
+
+Make the queries specific enough to find high-quality, relevant sources.
+</Task>
+
+<Format>
+Call the Queries tool 
+</Format>
+"""
+
+query_writer_instructions_internal="""You are an expert technical writer crafting targeted internal search queries that will gather comprehensive information for writing a technical report section.
+
+<Report topic>
+{topic}
+</Report topic>
+
+<Section topic> 
+{section_topic}
+</Section topic>
+
+<Internal documents>
+{internal_documents}
+</Internal documents>
+
+<Task>
+Your goal is to generate {number_of_queries} search queries that will help gather comprehensive information above the section topic. Refer to the internal documents for relevant context while crafting the queries.
+
+The queries should:
+
+1. Be related to the topic 
+2. Examine different aspects of the topic
+3. Not generate unnecessary queries or duplicates
+
+Make the queries specific enough to find high-quality, relevant sources.
+</Task>
+
+<Format>
+Call the Queries tool 
+</Format>
+"""
+
+section_writer_instructions_web = """Write one section of a research report.
+
+<Task>
+1. Review the report topic, section name, and section topic carefully.
+2. If present, review any existing section content. 
+3. Then, look at the provided Source material.
+4. Decide the sources that you will use it to write a report section.
+5. Write the report section and list your sources. 
+</Task>
+
+<Writing Guidelines>
+- If existing section content is not populated, write from scratch
+- If existing section content is populated, synthesize it with the source material
+- Strict 150-200 word limit
+- Use simple, clear language
+- Use short paragraphs (3-4 sentences max)
+- Use ## for section title (Markdown format)
+</Writing Guidelines>
+
+<Citation Rules>
+- Assign each unique URL a single citation number in your text
+- End with ### Sources that lists each source with corresponding numbers
+- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
+- Example format:
+  [1] Source Title: URL
+  [2] Source Title: URL
+</Citation Rules>
+
+<Final Check>
+1. Verify that EVERY claim is grounded in the provided Source material
+2. Confirm each URL appears ONLY ONCE in the Source list
+3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
+4. Dont add any extra text to the final output
+</Final Check>
+"""
+
+section_writer_instructions_internal = """Write one section of a research report.
+
+<Task>
+1. Review the report topic, section name, and section topic carefully.
+2. If present, review any existing section content. 
+3. Then, look at the provided Source material.
+4. Decide the sources that you will use it to write a report section.
+5. Write the report section and list your sources. 
+</Task>
+
+<Writing Guidelines>
+- If existing section content is not populated, write from scratch
+- If existing section content is populated, synthesize it with the source material
+- Strict 150-200 word limit
+- Use simple, clear language
+- Use short paragraphs (3-4 sentences max)
+- Use ## for section title (Markdown format)
+</Writing Guidelines>
+
+<Citation Rules>
+- Assign each unique URL a single citation number in your text
+- End with ### Sources that lists each source with corresponding numbers
+- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
+- Example format:
+  [1] Source Title: URL
+  [2] Source Title: URL
+</Citation Rules>
+
+<Final Check>
+1. Verify that EVERY claim is grounded in the provided Source material
+2. Confirm each URL appears ONLY ONCE in the Source list
+3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
+4. Dont add any extra text to the final output
+</Final Check>
+"""
+
+section_grader_instructions = """Review a report section relative to the specified topic:
+
+<Report topic>
+{topic}
+</Report topic>
+
+<section topic>
+{section_topic}
+</section topic>
+
+<section content>
+{section}
+</section content>
+
+<task>
+Evaluate whether the section content adequately addresses the section topic.
+
+If the section content does not adequately address the section topic, generate {number_of_follow_up_queries} follow-up search queries to gather missing information.
+</task>
+
+<format>
+Call the Feedback tool and output with the following schema:
+
+grade: Literal["pass","fail"] = Field(
+    description="Evaluation result indicating whether the response meets requirements ('pass') or needs revision ('fail')."
+)
+follow_up_queries: List[SearchQuery] = Field(
+    description="List of follow-up search queries.",
+)
+</format>
+"""
+
+section_writer_inputs=""" 
+<Report topic>
+{topic}
+</Report topic>
+
+<Section name>
+{section_name}
+</Section name>
+
+<Section topic>
+{section_topic}
+</Section topic>
+
+<Existing section content (if populated)>
+{section_content}
+</Existing section content>
+
+<Source material>
+{context}
+</Source material>
+"""
