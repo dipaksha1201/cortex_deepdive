@@ -81,13 +81,13 @@ Ensure your approach is methodical and scholarly, designed to uncover nuanced in
 academic standards of research quality.
 
 Internal Knowledge Search (RAG Queries):
-Generate {number_of_queries_internal} queries specifically tailored to retrieve relevant information from the provided 
+Generate {number_of_queries} queries specifically tailored to retrieve relevant information from the provided 
 internal documents context. 
 Queries must align with the report topic and leverage the detailed descriptions and types of the currently uploaded internal documents.
 Ensure queries explore foundational concepts and insights present within the internal documents.
 
 Online Search Queries:
-Generate {number_of_queries_online} queries for external web searches.
+Generate {number_of_queries} queries for external web searches.
 Queries should focus on obtaining current, external information complementary to the internal knowledge base.
 Queries must be specific enough to locate high-quality, credible sources and comprehensive enough to fulfill the structure outlined in the report organization.
 Both query sets should:
@@ -127,13 +127,13 @@ Ensure your approach is methodical and scholarly, designed to uncover nuanced in
 academic standards of research quality.
 
 Internal Knowledge Search (RAG Queries):
-Generate {number_of_queries_internal} queries specifically tailored to retrieve relevant information from the provided 
+Generate {number_of_queries} queries specifically tailored to retrieve relevant information from the provided 
 internal documents context. 
 Queries must align with the report topic and leverage the detailed descriptions and types of the currently uploaded internal documents.
 Ensure queries explore foundational concepts and insights present within the internal documents.
 
 Online Search Queries:
-Generate {number_of_queries_online} queries for external web searches.
+Generate {number_of_queries} queries for external web searches.
 Queries should focus on obtaining current, external information complementary to the internal knowledge base.
 Queries must be specific enough to locate high-quality, credible sources and comprehensive enough to fulfill the structure outlined in the report organization.
 Both query sets should:
@@ -362,18 +362,23 @@ Add or remove sections as needed.
 {report_organization}
 </Report organization>
 
-<Context>
-Here is context to use to plan the sections of the report: 
+<Previous Context>
+Here is context to used to plan the sections of the existing plan: 
 {context}
-</Context>
+</Previous Context>
 
-<Plan>
+<Previous Plan>
 {sections}
-</Plan>
+</Previous Plan>
 
 <Feedback>
 {feedback}
 </Feedback>
+
+<New Context>
+Here is additional context built to address the feedback: 
+{new_context}
+</New Context>
 
 <Format>
 Call the Sections tool 

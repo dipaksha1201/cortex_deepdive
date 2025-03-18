@@ -41,6 +41,12 @@ class HybridQueries(BaseModel):
     )
 
 class Feedback(BaseModel):
+    """Represents feedback for a report section evaluation.
+
+    Attributes:
+        grade: Indicates whether the section meets requirements ('pass') or needs revision ('fail').
+        follow_up_queries: Contains a list of search queries to gather additional information if needed.
+    """
     grade: Literal["pass","fail"] = Field(
         description="Evaluation result indicating whether the response meets requirements ('pass') or needs revision ('fail')."
     )
@@ -50,6 +56,7 @@ class Feedback(BaseModel):
 
 class ReportStateInput(TypedDict):
     topic: str # Report topic
+    internal_documents: str # Internal documents
     
 class ReportStateOutput(TypedDict):
     final_report: str # Final report
@@ -74,6 +81,7 @@ class ReportState(TypedDict):
     """
     topic: str # Report topic    
     feedback_on_report_plan: str # Feedback on the report plan
+    plan_context: str # Context built to address the feedback
     internal_documents: str # Internal documents
     sections: list[Section] # List of report sections
     completed_sections: Annotated[list, operator.add] # Send() API key
@@ -85,7 +93,9 @@ class SectionState(TypedDict):
     section: Section # Report section  
     search_iterations: int # Number of search iterations done
     search_queries: list[SearchQuery] # List of search queries
-    source_str: str # String of formatted source content from web search
+    internal_search_queries: list[SearchQuery] # List of internal search queries
+    search_results: str # String of formatted search results
+    internal_search_results: str # String of formatted internal search results
     report_sections_from_research: str # String of any completed sections from research to write final sections
     completed_sections: list[Section] # Final key we duplicate in outer state for Send() API
     internal_documents: str # Internal documents

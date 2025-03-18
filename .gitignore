@@ -1,0 +1,6 @@
+report_writer/__pycache__
+*__pycache__
+__pycache__
+.env
+.logger.py
+*.log

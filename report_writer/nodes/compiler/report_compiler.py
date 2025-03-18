@@ -10,6 +10,7 @@ from report_writer.state import Section
 from report_writer import report_writer_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 from report_writer.nodes.compiler.prompt import final_section_writer_instructions
+from logger import cortex_logger as logger
 
 def format_sections(sections: list[Section]) -> str:
     """ Format a list of sections into a string """
@@ -80,7 +81,7 @@ async def write_final_sections(state: SectionState):
     system_instructions = final_section_writer_instructions.format(
         topic=topic,
         section_name=section.name,
-        section_description=section.description,
+        section_topic=section.description,
         context=context
     )
     
@@ -88,7 +89,7 @@ async def write_final_sections(state: SectionState):
         SystemMessage(content=system_instructions),
         HumanMessage(content="Generate a report section based on the provided sources.")
     ])
-    section.content = section_content
+    section.content = section_content.content
     return {"completed_sections": [section]}
 
 def compile_final_report(state: ReportState):
@@ -116,5 +117,5 @@ def compile_final_report(state: ReportState):
 
     # Compile final report
     all_sections = "\n\n".join([s.content for s in sections])
-
+    logger.info(f"Final report: \n {all_sections}")
     return {"final_report": all_sections}

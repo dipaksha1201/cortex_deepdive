@@ -7,22 +7,23 @@ from report_writer.state import (
     SectionOutputState,
 )
 from .nodes.planner.report_planner import generate_report_plan, human_feedback, rewrite_report_plan
-from .nodes.writer.section_writer import generate_queries, search_web, search_internal, write_section, direct_research  
+from .nodes.writer.section_writer import generate_queries, search_web, write_section, perform_research
 from .nodes.compiler.report_compiler import gather_completed_sections, write_final_sections, compile_final_report, initiate_final_section_writing
-    
+from langgraph.checkpoint.mongodb import AsyncMongoDBSaver   
+import os
 
 # Add nodes 
 section_builder = StateGraph(SectionState, output=SectionOutputState)
 section_builder.add_node("generate_queries", generate_queries)
 section_builder.add_node("search_web", search_web)
-section_builder.add_node("search_internal", search_internal)
 section_builder.add_node("write_section", write_section)
+section_builder.add_node("perform_research", perform_research)
 
 # Add edges
 section_builder.add_edge(START, "generate_queries")
-section_builder.add_conditional_edges("generate_queries", direct_research, ["search_web", "search_internal"])
+section_builder.add_edge("generate_queries", "perform_research")
+section_builder.add_edge("perform_research", "write_section")
 section_builder.add_edge("search_web", "write_section")
-section_builder.add_edge("search_internal", "write_section")
 
 # Outer graph for initial report plan compiling results from each section -- 
 
@@ -45,4 +46,14 @@ builder.add_conditional_edges("gather_completed_sections", initiate_final_sectio
 builder.add_edge("write_final_sections", "compile_final_report")
 builder.add_edge("compile_final_report", END)
 
-graph = builder.compile()
+async def run_deepdive(input, config):
+    async with AsyncMongoDBSaver.from_conn_string(os.getenv("MONGODB_URI")) as checkpointer:
+        graph = builder.compile(checkpointer=checkpointer)
+        result = await graph.ainvoke(input, config)
+        return result
+
+async def run_section_builder(input, config):
+    async with AsyncMongoDBSaver.from_conn_string(os.getenv("MONGODB_URI")) as checkpointer:
+        graph = section_builder.compile(checkpointer=checkpointer)
+        result = await graph.ainvoke(input, config)
+        return result
