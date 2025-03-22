@@ -11,7 +11,7 @@ from .nodes.writer.section_writer import generate_queries, search_web, write_sec
 from .nodes.compiler.report_compiler import gather_completed_sections, write_final_sections, compile_final_report, initiate_final_section_writing
 from langgraph.checkpoint.mongodb import AsyncMongoDBSaver   
 import os
-
+from logger import cortex_logger as logger 
 # Add nodes 
 section_builder = StateGraph(SectionState, output=SectionOutputState)
 section_builder.add_node("generate_queries", generate_queries)
@@ -49,8 +49,24 @@ builder.add_edge("compile_final_report", END)
 async def run_deepdive(input, config):
     async with AsyncMongoDBSaver.from_conn_string(os.getenv("MONGODB_URI")) as checkpointer:
         graph = builder.compile(checkpointer=checkpointer)
-        result = await graph.ainvoke(input, config)
-        return result
+        final_result = None
+        # Use streaming mode "updates" to capture intermediate events (including interrupts)
+        async for event in graph.astream(input, config, stream_mode="updates"):
+            logger.info("Graph event:", str(event))
+            # If an interrupt event is present, you can capture its payload:
+            if "__interrupt__" in event:
+                interrupt_payload = event["__interrupt__"]
+                print("Interrupt encountered:", interrupt_payload)
+                # Optionally, you can decide to break or resume the graph using a Command.
+                # For now, we'll break out of the stream.
+                break
+            if "compile_final_report" in event:
+                event = event["compile_final_report"]["final_report"]
+            # Optionally, if the event represents a final result, store it.
+            # (The final event may include a key like "final_result" or simply be the last state.)
+            final_result = event
+
+        return final_result
 
 async def run_section_builder(input, config):
     async with AsyncMongoDBSaver.from_conn_string(os.getenv("MONGODB_URI")) as checkpointer:

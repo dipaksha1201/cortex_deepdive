@@ -10,3 +10,5 @@ python-dotenv>=1.0.0  # For environment variables
 google-genai
 pymongo
 langgraph-checkpoint-mongodb
+fastapi
+uvicorn

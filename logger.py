@@ -28,3 +28,15 @@ cortex_logger.setLevel(logging.INFO)
 cortex_logger.format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
 cortex_logger.addHandler(logging.FileHandler(cortex_log_file_path, mode='a'))
 cortex_logger.addHandler(logging.StreamHandler())
+
+agent_log_file_path = os.path.join(log_dir, "agent.log")
+
+# Create logs directory
+os.makedirs(log_dir, exist_ok=True)
+
+# Configure reasoning logger
+agent_logger = logging.getLogger("agent_logger")
+agent_logger.setLevel(logging.INFO)
+agent_logger.format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+agent_logger.addHandler(logging.FileHandler(agent_log_file_path, mode='a'))
+agent_logger.addHandler(logging.StreamHandler())

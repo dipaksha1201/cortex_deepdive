@@ -13,10 +13,32 @@ async def perform_internal_knowledge_search(queries, user_id: str):
 
 def perform_web_search(queries): 
     subquery_results = {}
-    for query in queries:
-        subquery_results[query] = google_search(query)
-    reasoning_text = create_reasoning_text_web(subquery_results)
-    return reasoning_text
+    if not queries:
+        logger.warning("No search queries provided to perform_web_search")
+        return "No search queries were provided."
+        
+    try:
+        for query in queries:
+            if not query or not isinstance(query, str):
+                logger.warning(f"Invalid query type or empty query: {type(query)}")
+                subquery_results[str(query)] = "Invalid search query format."
+                continue
+                
+            logger.info(f"Performing web search for query: {query}")
+            search_result = google_search(query)
+            
+            # Check if the search result indicates an error
+            if search_result and (search_result.startswith("Error:") or 
+                               search_result.startswith("An error occurred")):
+                logger.warning(f"Search error for query '{query}': {search_result}")
+            
+            subquery_results[query] = search_result
+            
+        reasoning_text = create_reasoning_text_web(subquery_results)
+        return reasoning_text
+    except Exception as e:
+        logger.error(f"Error in perform_web_search: {str(e)}")
+        return f"An error occurred during web search: {str(e)}. Please try again later."
 
 def create_reasoning_text_web(subquery_results) -> str:
     reasoning_steps = []

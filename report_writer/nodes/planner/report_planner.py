@@ -114,7 +114,7 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
         for section in report_sections.sections:
             section.internal_search = False
 
-    return {"sections": report_sections.sections, "plan_context": source_str}
+    return {"sections": report_sections.sections, "plan_context": source_str, "description": report_sections.description}
 
 async def rewrite_report_plan(state: ReportState, config: RunnableConfig): 
     topic = state["topic"]
@@ -176,24 +176,15 @@ async def rewrite_report_plan(state: ReportState, config: RunnableConfig):
         HumanMessage(content="Rewrite the report plan based on the feedback.")
     ])
 
-    return {"sections": report_sections.sections}
+    return {"sections": report_sections.sections, "description": report_sections.description}
 
 def human_feedback(state: ReportState) -> Command[Literal["rewrite_report_plan", "build_section_with_research"]]:
     """Get human feedback on the report plan and route to next steps."""
     topic = state["topic"]
     sections = state['sections']
-    sections_str = "\n\n".join(
-        f"Section: {section.name}\n"
-        f"Description: {section.description}\n"
-        f"Online Research needed: {'Yes' if section.research else 'No'}\n"
-        f"Internal Research needed: {'Yes' if section.internal_search else 'No'}\n"
-        for section in sections
-    )
 
-    interrupt_message = f"""Please provide feedback on the following report plan. 
-                        \n\n{sections_str}\n
-                        \nDoes the report plan meet your needs?\nPass 'true' to approve the report plan.\nOr, provide feedback to regenerate the report plan:"""
-    logger.info(f"Human feedback request: {interrupt_message}")
+    interrupt_message = sections
+    logger.info(f"Creating report plan: Human feedback request")
     feedback = interrupt(interrupt_message)
     logger.info(f"Human feedback response: {feedback}")
 

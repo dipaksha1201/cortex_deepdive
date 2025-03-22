@@ -20,6 +20,9 @@ class Section(BaseModel):
     )   
 
 class Sections(BaseModel):
+    description: str = Field(
+        description="A one-sentence description of the sections of the report decided during the report planning process."
+    )
     sections: List[Section] = Field(
         description="Sections of the report.",
     )
@@ -80,6 +83,7 @@ class ReportState(TypedDict):
         final_report: The complete generated report
     """
     topic: str # Report topic    
+    description: str # Report description
     feedback_on_report_plan: str # Feedback on the report plan
     plan_context: str # Context built to address the feedback
     internal_documents: str # Internal documents

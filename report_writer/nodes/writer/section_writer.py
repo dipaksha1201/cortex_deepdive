@@ -23,16 +23,64 @@ from logger import runner_logger as logger
 async def perform_research(state: SectionState):
     search_iterations = state["search_iterations"]
     logger.info(f"Performing research for section: {state['section'].name}")
+    logger.info(f"Search queries: {state['search_queries']}")
+    logger.info(f"Internal search queries: {state['internal_search_queries']}")
     
+    # Initialize variables before conditional blocks
+    search_response = ""
+    internal_search_response = ""
+    error_messages = []
+    
+    # Perform web search if queries exist
     if "search_queries" in state and len(state["search_queries"]) > 0:
-        search_response = perform_web_search(state["search_queries"])
+        try:
+            logger.info("Performing web search for section queries")
+            search_response = perform_web_search(state["search_queries"])
+            
+            # Check if the search response indicates an error
+            if search_response and (search_response.startswith("Error:") or 
+                                search_response.startswith("An error occurred")):
+                error_message = f"Web search error: {search_response}"
+                logger.warning(error_message)
+                error_messages.append(error_message)
+                # Provide a fallback message for the section writer
+                search_response = "Web search could not be completed. Please rely on internal knowledge or proceed with limited information."
+        except Exception as e:
+            error_message = f"Exception during web search: {str(e)}"
+            logger.error(error_message)
+            error_messages.append(error_message)
+            search_response = "Web search encountered an error. Please proceed with available information."
     
+    # Perform internal search if queries exist
     if "internal_search_queries" in state and len(state["internal_search_queries"]) > 0:
-        internal_search_response = await perform_internal_knowledge_search(state["internal_search_queries"], "dipak")
+        try:
+            logger.info("Performing internal search for section queries")
+            internal_search_response = await perform_internal_knowledge_search(state["internal_search_queries"], "dipak")
+            
+            # Check if internal search response is empty or indicates an error
+            if not internal_search_response or (isinstance(internal_search_response, str) and 
+                                            (internal_search_response.startswith("Error:") or 
+                                             internal_search_response.startswith("An error occurred"))):
+                error_message = f"Internal search error or empty result: {internal_search_response}"
+                logger.warning(error_message)
+                error_messages.append(error_message)
+                internal_search_response = "Internal knowledge search could not be completed. Please rely on web search or proceed with limited information."
+        except Exception as e:
+            error_message = f"Exception during internal search: {str(e)}"
+            logger.error(error_message)
+            error_messages.append(error_message)
+            internal_search_response = "Internal knowledge search encountered an error. Please proceed with available information."
     
+    # If both searches failed, add a note to the section content
+    if error_messages and not search_response and not internal_search_response:
+        section = state["section"]
+        if not section.content:
+            section.content = ""
+        section.content += "\n\nNote: Research for this section encountered technical difficulties. The content is based on limited information."
+        
     return {
-        "search_results": search_response or "",
-        "internal_search_results": internal_search_response or "",
+        "search_results": search_response,
+        "internal_search_results": internal_search_response,
         "search_iterations": search_iterations + 1
     }
     
