@@ -13,32 +13,32 @@ async def perform_internal_knowledge_search(queries, user_id: str):
 
 def perform_web_search(queries): 
     subquery_results = {}
-    if not queries:
-        logger.warning("No search queries provided to perform_web_search")
-        return "No search queries were provided."
+    all_sources = []
+    for query in queries:
+        search_result = google_search(query)
         
-    try:
-        for query in queries:
-            if not query or not isinstance(query, str):
-                logger.warning(f"Invalid query type or empty query: {type(query)}")
-                subquery_results[str(query)] = "Invalid search query format."
-                continue
-                
-            logger.info(f"Performing web search for query: {query}")
-            search_result = google_search(query)
+        # Handle different return types from google_search
+        if isinstance(search_result, tuple) and len(search_result) == 2:
+            # Normal case: (result, sources)
+            result, source = search_result
+            subquery_results[query] = result
+            all_sources.extend(source)
+        else:
+            # Error case: string
+            subquery_results[query] = search_result if isinstance(search_result, str) else str(search_result)
+            logger.warning(f"Google search for query '{query}' did not return sources")
+    
+    # Create a list of unique sources based on title
+    unique_sources = []
+    unique_titles = set()
+    for source in all_sources:
+        if source.get("title") and source["title"] not in unique_titles:
+            unique_sources.append(source)
+            unique_titles.add(source["title"])
             
-            # Check if the search result indicates an error
-            if search_result and (search_result.startswith("Error:") or 
-                               search_result.startswith("An error occurred")):
-                logger.warning(f"Search error for query '{query}': {search_result}")
-            
-            subquery_results[query] = search_result
-            
-        reasoning_text = create_reasoning_text_web(subquery_results)
-        return reasoning_text
-    except Exception as e:
-        logger.error(f"Error in perform_web_search: {str(e)}")
-        return f"An error occurred during web search: {str(e)}. Please try again later."
+    reasoning_text = create_reasoning_text_web(subquery_results)
+
+    return reasoning_text, unique_sources
 
 def create_reasoning_text_web(subquery_results) -> str:
     reasoning_steps = []

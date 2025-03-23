@@ -81,6 +81,7 @@ Write one section of a research report.
 1. Review the report topic, section name, and section topic carefully.
 2. If present, review any existing section content. 
 3. Then, look at the provided Online source material(if available) and Internal source material(if available).
+- Always pay more consideration to the Internal source material unless not relevant if available and include them in the sources as per Citation Rules
 4. Decide the sources that you will use it to write a report section.
 5. Write the report section and list your sources. 
 </Task>
@@ -88,19 +89,19 @@ Write one section of a research report.
 <Writing Guidelines>
 - If existing section content is not populated, write from scratch
 - If existing section content is populated, synthesize it with the source material
-- Strict 150-200 word limit
+- Strict 250-300 word limit
 - Use simple, clear language
 - Use short paragraphs (3-4 sentences max)
-- Use ## for section title (Markdown format)
+- Use ## for section title taken from the section name (Markdown format)
 </Writing Guidelines>
 
 <Citation Rules>
 - Assign each unique URL or document name a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
 - IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Example format:
-  [1] Source Title: URL/document name
-  [2] Source Title: URL/document name
+- Include a document name whenever provided eg. AMZN-Q4-2024-Earnings-Release.pdf, internal or simply internal when not provided as the source title when citing internal documents from internal sources
+- add confidence scores on your own for internal sources and use them to ground your claims
+- add confidence scores as given for external sources and use them to ground your claims
+- add not more than 3 sources titles for a single source, and always include internal as one of the labels if it is present in the internal sources
 </Citation Rules>
 
 <Final Check>
@@ -108,6 +109,10 @@ Write one section of a research report.
 2. Confirm each URL appears ONLY ONCE in the Source list
 3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
 4. Dont add any extra text to the final output
+5. Verify confidence scores are mapped correctly for each source title
+6. Only use index numbers in the content
+7. Verify that ## is used for section title taken from the section name
+8. Dont add any extra text to the final output
 </Final Check>
 """
 

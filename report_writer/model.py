@@ -1,9 +1,12 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Any
 from report_writer.state import Section
 from typing import Literal
 from services.mongo import MongoDBConfig
 from bson.objectid import ObjectId
+import pytz
+from datetime import datetime
+from report_writer.service import ReportMetadata
 
 class DeepResearch(BaseModel):
     id: str = ""
@@ -12,10 +15,12 @@ class DeepResearch(BaseModel):
     topic: str = ""
     description: str = ""
     plan: List[Section] = []
-    sources: List[str] = []
+    sources: List[Any] = []
     status: Literal["to_be_started" , "in_planning","in_progress", "completed"] = "to_be_started"
     report: str = ""
-    
+    created_at: str = ""
+    insights: List[str] = []
+    type: str = ""    
     # This will be excluded from serialization
     db: any = None
 
@@ -41,16 +46,53 @@ class DeepResearch(BaseModel):
 
     def update_status(self, status: Literal["in_planning","in_progress", "completed"]):
         self.status = status
-        self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"status": status}})
+        if status == "in_progress":
+            self.created_at = datetime.now(pytz.utc).isoformat()
+            self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"status": status, "created_at": self.created_at}})
+        else:
+            self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"status": status}})
         
     def update_report(self, report: str):
         self.report = report
         self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"report": report}})
         
-    def update_completed_sections(self, completed_sections: List[Section]):
-        self.completed_sections = completed_sections
-        self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"completed_sections": completed_sections}})
+    def update_metadata(self, metadata: ReportMetadata):
+        """Update the metadata for this research report.
         
+        Args:
+            metadata: A ReportMetadata object containing insights and type."""
+        self.insights = metadata.insights
+        self.type = metadata.type
+        self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"insights": self.insights, "type": self.type}})
+    
+    def update_report_completion(self, report: str, sources: List[Any], metadata: ReportMetadata, status: Literal["in_planning","in_progress", "completed"] = "completed"):
+        """Update report with all completion data in a single database operation.
+        
+        Args:
+            report: The completed report content
+            sources: List of sources used in the report
+            metadata: A ReportMetadata object containing insights and type
+            status: The new status of the report (defaults to "completed")
+        """
+        # Update local object properties
+        self.report = report
+        self.sources = sources
+        self.insights = metadata.insights
+        self.type = metadata.type
+        self.status = status
+        
+        # Perform a single database update with all fields
+        self.db["deep_research"].update_one(
+            {"_id": ObjectId(self.id)}, 
+            {"$set": {
+                "report": report,
+                "sources": sources,
+                "insights": self.insights,
+                "type": self.type,
+                "status": status
+            }}
+        )
+
     def update_plan(self, plan, description):
         """Update the plan for this research report.
         
@@ -70,7 +112,7 @@ class DeepResearch(BaseModel):
             
         self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"plan": plan_data, "description": description}})
         
-    def update_sources(self, sources: List[str]):
+    def update_sources(self, sources: List[Any]):
         self.sources = sources
         self.db["deep_research"].update_one({"_id": ObjectId(self.id)}, {"$set": {"sources": sources}})
         
@@ -85,7 +127,26 @@ class DeepResearch(BaseModel):
         self.id = str(report["_id"])
         return self
         
+    @staticmethod
+    def get_unique_types_by_user_id(user_id: str):
+        """
+        Retrieve all unique types of DeepResearch documents for a specific user.
         
-
-
+        Args:
+            user_id (str): The ID of the user to filter by
+            
+        Returns:
+            List[str]: A list of unique types found in the DeepResearch documents for the user
+        """
+        # Initialize the database connection
+        db_config = MongoDBConfig()
+        db = db_config.connect()
+        
+        # Query the database to find all distinct types for the given user_id
+        # The distinct method returns a list of unique values for the specified field
+        unique_types = db["deep_research"].distinct("type", {"user_id": user_id})
+        
+        # Return the list of unique types
+        return unique_types
+        
         

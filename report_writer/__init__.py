@@ -17,5 +17,6 @@ planner_query_writer = get_gemini("gemini-2.0-flash")
 planner_llm = get_gemini("gemini-2.0-flash")
 report_writer_llm = get_gemini("gemini-2.0-flash-thinking-exp")
 gemini_flash = get_gemini("gemini-2.0-flash")
+gemini_pro = get_gemini("gemini-2.0-pro-exp-02-05")
 
-__all__ = ["planner_query_writer", "planner_llm", "report_writer_llm", "gemini_flash"]
+__all__ = ["planner_query_writer", "planner_llm", "report_writer_llm", "gemini_flash", "gemini_pro"]

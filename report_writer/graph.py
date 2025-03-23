@@ -68,6 +68,12 @@ async def run_deepdive(input, config):
 
         return final_result
 
+async def get_completed_sections(config):
+    async with AsyncMongoDBSaver.from_conn_string(os.getenv("MONGODB_URI")) as checkpointer:
+        graph = builder.compile(checkpointer=checkpointer)
+        state = await graph.aget_state(config=config)
+        return state.values["sections"]
+        
 async def run_section_builder(input, config):
     async with AsyncMongoDBSaver.from_conn_string(os.getenv("MONGODB_URI")) as checkpointer:
         graph = section_builder.compile(checkpointer=checkpointer)

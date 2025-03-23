@@ -3,6 +3,24 @@ from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 import os
 from logger import runner_logger as logger
 
+def generate_final_string(mapped_grounding_supports):
+    final_lines = ["##Sources##\n"]
+    
+    for support in mapped_grounding_supports:
+        segment_text = support.get("segment_text", "")
+        confidence_scores = support.get("confidence_scores", [])
+        # Format confidence scores as a comma separated string
+        confidence_str = ", ".join([str(score) for score in confidence_scores])
+        
+        # Extract titles from the sources (ignore URI)
+        source_titles = [src.get("title", "") for src in support.get("sources", [])]
+        titles_str = ", ".join(source_titles)
+        
+        final_lines.append(f"Segment Text: {segment_text} - Confidence: [{confidence_str}]")
+        final_lines.append(f"Sources: [{titles_str}]")
+    
+    return "\n".join(final_lines)
+
 def google_search(query):
     try:
         query = query + " ## Search Instructions## Give the most relevant information first. Do a thorough search and provide all the information you can find. Always answer in English."
@@ -34,7 +52,6 @@ def google_search(query):
         
         # Process the response content with proper error handling
         final_response = ""
-        
         # Check if response has candidates
         if not response or not hasattr(response, 'candidates') or not response.candidates:
             logger.warning("Google search response has no candidates")
@@ -55,11 +72,45 @@ def google_search(query):
             if hasattr(each, 'text'):
                 final_response += each.text
         
+        sources = []
+        candidate = response.candidates[0]
+
+        mapped_grounding_supports = []
+        candidate = response.candidates[0]
+
+        if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
+            # Extract sources from grounding chunks
+            for chunk in candidate.grounding_metadata.grounding_chunks:
+                if hasattr(chunk, "web") and chunk.web:
+                    sources.append({
+                        "title": chunk.web.title,
+                        "uri": chunk.web.uri
+                    })
+
+        if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
+            chunks = candidate.grounding_metadata.grounding_chunks
+            for support in candidate.grounding_metadata.grounding_supports:
+                support_mapping = {
+                    "confidence_scores": support.confidence_scores,
+                    "segment_text": support.segment.text,
+                    "sources": []
+                }
+                # Map each grounding support to corresponding chunk(s) using the indices
+                for index in support.grounding_chunk_indices:
+                    if index < len(chunks) and hasattr(chunks[index], "web") and chunks[index].web:
+                        support_mapping["sources"].append({
+                            "title": chunks[index].web.title,
+                            "uri": chunks[index].web.uri
+                        })
+                mapped_grounding_supports.append(support_mapping)
+
+        grounding_metadata_string = generate_final_string(mapped_grounding_supports)
+
         if not final_response:
             logger.warning("No text content found in Google search response parts")
             return "No text content found in search results. Please try a different query."
-            
-        return final_response
+        result = final_response + "\n\n" + grounding_metadata_string
+        return (result, sources)
         
     except Exception as e:
         logger.error(f"Error in google_search: {str(e)}")

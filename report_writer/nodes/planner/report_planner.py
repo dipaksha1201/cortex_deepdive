@@ -33,14 +33,14 @@ async def retrieve_query_responses(query_list, mode):
         else:
             internal_search_results = "No new internal search queries generated"
         if len(web_query_list) > 0:
-            web_search_results = perform_web_search(web_query_list)
+            web_search_results, _ = perform_web_search(web_query_list)
         else:
             web_search_results = "No new web search queries generated"
         return {"internal_search_results": internal_search_results, "web_search_results": web_search_results}
     else:
         query_list = [query.search_query for query in query_list.queries]
         if len(query_list) > 0:
-            search_results = perform_web_search(query_list)
+            search_results , _ = perform_web_search(query_list)
         else:
             search_results = "No new web search queries generated"
         return {"web_search_results": search_results}

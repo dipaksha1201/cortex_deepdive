@@ -246,6 +246,7 @@ Each section should have the fields:
 - Research - Whether to perform web research for this section of the report.
 - Internal Search - Whether to perform internal knowledge retrieval, which you will leave false for now.
 - Content - The content of the section, which you will leave blank for now.
+- Sources - List of sources used in this section, which you will leave blank for now.
 
 Integration guidelines:
 - Include examples and implementation details within main topic sections, not as separate sections
@@ -329,6 +330,7 @@ Each section should have the fields:
 - Research - Whether to perform web research for this section of the report.
 - Internal Search - Whether to perform internal knowledge retrieval for this section of the report.
 - Content - The content of the section, which you will leave blank for now.
+- Sources - List of sources used in this section, which you will leave blank for now.
 
 Integration guidelines:
 - Include examples and implementation details within main topic sections, not as separate sections

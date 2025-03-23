@@ -6,6 +6,8 @@ from services.document import DocumentService
 from report_writer.utils import format_documents
 from langgraph.types import Command
 from report_writer.model import DeepResearch
+from report_writer.graph import get_completed_sections
+from report_writer.service import generate_report_metadata
 
 DEFAULT_REPORT_STRUCTURE = """Use this structure to create a report on the user-provided topic:
 
@@ -41,10 +43,25 @@ async def continue_research(user_id: str, report_id: str, data: str | bool):
     print("Response:", response)
     if isinstance(response, str):
         print("Response is a string")
+        list_of_sources = []
         researcher = DeepResearch()
-        researcher.id = report_id   
-        researcher.update_status("completed")
-        researcher.update_report(response)
+        researcher.id = report_id  
+        completed_sections = await get_completed_sections(config)
+        for section in completed_sections: 
+            section_sources = {}
+            section_sources["section_name"] = section.name
+            section_sources["sources"] = section.sources
+            list_of_sources.append(section_sources)
+
+        unique_types = DeepResearch.get_unique_types_by_user_id(user_id)
+        metadata = generate_report_metadata(response, unique_types)
+        # Use the combined update method to perform a single database operation
+        researcher.update_report_completion(
+            report=response,
+            sources=list_of_sources,
+            metadata=metadata,
+            status="completed"
+        )
         return response
     else:
         print("Response is not a string")

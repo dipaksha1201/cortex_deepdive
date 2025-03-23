@@ -1,15 +1,12 @@
 """
 Section writing nodes for generating and managing individual report sections.
 """
-from typing import List
-from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
-from report_writer import planner_query_writer
-from report_writer.state import SectionState, Queries, Feedback
+from report_writer import planner_query_writer, gemini_pro
+from report_writer.state import SectionState, Queries, Feedback, SectionWriter
 from report_writer.graph import END
-from report_writer import report_writer_llm
 from report_writer.utils import perform_web_search, perform_internal_knowledge_search
 from .prompt import (
     query_writer_instructions_internal,
@@ -30,13 +27,12 @@ async def perform_research(state: SectionState):
     search_response = ""
     internal_search_response = ""
     error_messages = []
+    search_sources = []
     
     # Perform web search if queries exist
     if "search_queries" in state and len(state["search_queries"]) > 0:
         try:
-            logger.info("Performing web search for section queries")
-            search_response = perform_web_search(state["search_queries"])
-            
+            search_response, search_sources = perform_web_search(state["search_queries"])           
             # Check if the search response indicates an error
             if search_response and (search_response.startswith("Error:") or 
                                 search_response.startswith("An error occurred")):
@@ -54,7 +50,6 @@ async def perform_research(state: SectionState):
     # Perform internal search if queries exist
     if "internal_search_queries" in state and len(state["internal_search_queries"]) > 0:
         try:
-            logger.info("Performing internal search for section queries")
             internal_search_response = await perform_internal_knowledge_search(state["internal_search_queries"], "dipak")
             
             # Check if internal search response is empty or indicates an error
@@ -81,7 +76,8 @@ async def perform_research(state: SectionState):
     return {
         "search_results": search_response,
         "internal_search_results": internal_search_response,
-        "search_iterations": search_iterations + 1
+        "search_iterations": search_iterations + 1,
+        "search_sources": search_sources
     }
     
 async def generate_queries(state: SectionState, config: RunnableConfig):
@@ -124,10 +120,11 @@ def search_web(state: SectionState):
     queries = state["search_queries"]
     search_iterations = state["search_iterations"]
     queries = [query.search_query for query in queries]
-    search_results = perform_web_search(queries)
+    search_results, search_sources = perform_web_search(queries)
     return {
         "search_results": search_results,
-        "search_iterations": search_iterations + 1
+        "search_iterations": search_iterations + 1,
+        "search_sources": search_sources
     }
 
 async def write_section(state: SectionState, config: RunnableConfig):
@@ -135,6 +132,7 @@ async def write_section(state: SectionState, config: RunnableConfig):
     topic = state["topic"]
     section = state["section"]
     search_results = state["search_results"]
+    search_sources = state["search_sources"]
     internal_search_results = state["internal_search_results"]
     search_iterations = state["search_iterations"]
     max_search_iterations = config["configurable"]["max_search_iterations"]
@@ -148,12 +146,28 @@ async def write_section(state: SectionState, config: RunnableConfig):
                                                              section_content=section.content)
     
     system_instructions = section_writer_instructions
-    section_content = report_writer_llm.invoke([
+    section_writer = gemini_pro.with_structured_output(SectionWriter)
+    section_content = section_writer.invoke([
         SystemMessage(content=system_instructions),
         HumanMessage(content=section_writer_inputs_formatted)
     ])
 
     section.content = section_content.content
+    sources = [s.model_dump() for s in section_content.sources]
+    for source in sources:
+        if "sources" in source:
+            source_refs = source["sources"]
+            for s in source_refs:
+                if "title" in s:
+                    title = s["title"]
+                    for ref in search_sources:
+                        if "title" in ref and ref["title"] == title:
+                            if "uri" in ref:  # Check if search API returns "uri" instead of "url"
+                                s["url"] = ref["uri"]
+                            elif "url" in ref:
+                                s["url"] = ref["url"]
+    
+    section.sources = sources
 
     section_grader_message = ("Grade the report and consider follow-up questions for missing information. "
                               "If the grade is 'pass', return empty strings for all follow-up queries. "
@@ -174,7 +188,6 @@ async def write_section(state: SectionState, config: RunnableConfig):
     # If the section is passing or the max search depth is reached, publish the section to completed sections 
     if feedback.grade == "pass" or search_iterations >= max_search_iterations:
         # Publish the section to completed sections 
-        logger.info(f"Publishing section to completed sections: \n {section}")
         return  Command(
         update={"completed_sections": [section]},
         goto=END

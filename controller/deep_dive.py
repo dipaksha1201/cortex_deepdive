@@ -16,15 +16,6 @@ class ResearchRequest(BaseModel):
     message: str = ""
     feedback: Optional[Union[bool, str]] = None
 
-# @api_router.get("/deepdive/{user_id}/{report_id}")
-# async def websocket_endpoint(user_id: str, report_id: str):
-#     try:
-#         researcher = DeepResearch()
-#         response = researcher.get_status(user_id, report_id)
-#         return json.dumps(response)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
 @api_router.post("/deepdive/{user_id}/{project_id}")
 async def create_deepdive(user_id: str, project_id: str, request: ResearchRequest):
     """Create a new deep dive research report"""

@@ -2,8 +2,38 @@ import os
 import json
 import httpx
 import asyncio
-from logger import runner_logger as logger
-from typing import Dict, List, Any, Generator, AsyncGenerator
+from logger import cortex_logger as logger
+from typing import Dict, List, Any, AsyncGenerator
+from report_writer import gemini_pro
+from pydantic import BaseModel
+
+PROMPT = """
+Roles:
+Act as a PhD-level scientist, demonstrating rigorous analytical thinking, precision, and thoroughness in your approach. 
+Your queries should reflect deep academic insight, mastery of foundational principles, and meticulous attention to detail. 
+Ensure your approach is methodical and scholarly, designed to uncover nuanced insights, verify assumptions, and uphold 
+academic standards of research quality.
+
+You are given a report. Your task is to extract up to 10 critical highlights that are genuinely insightful and actionable — avoid generic observations. Focus on insights that can drive business, product, or strategic decisions.
+
+Also, based on the nature of the report, assign a unique research type that best reflects its content and purpose. This can be an existing category ({categories}) or a new, precise classification if the report does not fit traditional types.
+
+Make sure the research type is from existing categories unless absolutely necessary. Avoid creating similar research types that already exist rather use existing categories. Research Type should not be longer than 2 words.
+
+Report:
+{report}
+"""
+
+class ReportMetadata(BaseModel):
+    insights: List[str]
+    type: str
+
+def generate_report_metadata(report: str, categories: list[str]) -> ReportMetadata:
+    prompt = PROMPT.format(categories=", ".join(categories), report=report)
+    logger.info(f"Prompt: {prompt}")
+    model = gemini_pro.with_structured_output(ReportMetadata)
+    response = model.invoke(prompt)
+    return response
 
 async def retrieve_subqueries(queries: list[str], user_id: str) -> AsyncGenerator[Dict[str, Any], None]:
     url = f"{os.getenv('DOCSERVICE_BASE_URL')}/query"
