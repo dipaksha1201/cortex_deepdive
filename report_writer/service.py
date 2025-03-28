@@ -35,10 +35,11 @@ def generate_report_metadata(report: str, categories: list[str]) -> ReportMetada
     response = model.invoke(prompt)
     return response
 
-async def retrieve_subqueries(queries: list[str], user_id: str) -> AsyncGenerator[Dict[str, Any], None]:
+async def retrieve_subqueries(queries: list[str], user_id: str, project_id: str) -> AsyncGenerator[Dict[str, Any], None]:
     url = f"{os.getenv('DOCSERVICE_BASE_URL')}/query"
     data = {
         "user_name": user_id,
+        "project_id": project_id,
         "queries": queries
     }
     headers = {

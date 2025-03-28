@@ -26,19 +26,19 @@ def get_internal_documents(user_id: str):
     documents = document_service.get_user_documents(user_id)
     return format_documents(documents) 
 
-def get_config(user_id: str, report_id: str):
-    return {"configurable": {"user_id": user_id, "thread_id": report_id, "report_structure": DEFAULT_REPORT_STRUCTURE, "number_of_queries": 3, "mode": "hybrid_rag", "max_search_iterations": 3, "max_follow_up_queries": 3, "max_section_words": 500}}
+def get_config(user_id: str, project_id: str, report_id: str):
+    return {"configurable": {"user_id": user_id, "project_id": project_id, "thread_id": report_id, "report_structure": DEFAULT_REPORT_STRUCTURE, "number_of_queries": 3, "mode": "hybrid_rag", "max_search_iterations": 3, "max_follow_up_queries": 3, "max_section_words": 500}}
 
 async def start_planner(user_id: str, project_id: str, topic: str, report_id: str):
     internal_documents = get_internal_documents(user_id)
     input = {"topic": topic, "internal_documents": internal_documents}
-    config = get_config(user_id, report_id)
+    config = get_config(user_id, project_id, report_id)
     plan = await run_deepdive(input, config)
     return plan
 
-async def continue_research(user_id: str, report_id: str, data: str | bool):
+async def continue_research(user_id: str, project_id: str, report_id: str, data: str | bool):
     input = Command(resume=data)
-    config = get_config(user_id, report_id)
+    config = get_config(user_id, project_id, report_id)
     response = await run_deepdive(input, config)
     print("Response:", response)
     if isinstance(response, str):

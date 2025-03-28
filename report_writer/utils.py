@@ -3,9 +3,9 @@ from report_writer.search import google_search
 from logger import runner_logger as logger
 """Utility classes and functions for the report writer."""
 
-async def perform_internal_knowledge_search(queries, user_id: str): 
+async def perform_internal_knowledge_search(queries, user_id: str, project_id: str): 
     subquery_results = []
-    async for output in retrieve_subqueries(queries, user_id):
+    async for output in retrieve_subqueries(queries, user_id, project_id):
         # Yield each piece of the response to stream downstream
         subquery_results.append(output)
     reasoning_text = create_reasoning_text(subquery_results)

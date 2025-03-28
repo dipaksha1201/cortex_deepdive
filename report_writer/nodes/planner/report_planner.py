@@ -23,13 +23,13 @@ from .prompt import (
 from logger import runner_logger as logger
 
 
-async def retrieve_query_responses(query_list, mode):
+async def retrieve_query_responses(query_list, mode, user_id, project_id):
     """Retrieve responses for the given search queries."""
     if mode == "hybrid_rag": 
         internal_query_list = [query.search_query for query in query_list.internal_search_queries]
         web_query_list = [query.search_query for query in query_list.web_search_queries]
         if len(internal_query_list) > 0:
-            internal_search_results = await perform_internal_knowledge_search(internal_query_list, "dipak")
+            internal_search_results = await perform_internal_knowledge_search(internal_query_list, user_id, project_id)
         else:
             internal_search_results = "No new internal search queries generated"
         if len(web_query_list) > 0:
@@ -51,6 +51,8 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
     report_structure = config["configurable"]["report_structure"]
     number_of_queries = config["configurable"]["number_of_queries"]
     mode = config["configurable"]["mode"]
+    user = config["configurable"]["user_id"]
+    project_id = config["configurable"]["project_id"]
     logger.info(f"Generating report plan for topic: {topic}")
     logger.info(f"Report structure: {report_structure}")
     logger.info(f"Number of queries: {number_of_queries}")
@@ -81,7 +83,7 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
         HumanMessage(content="Generate search queries that will help with planning the sections of the report.")
     ])
     logger.info(f"Generated search queries: {results}")
-    query_results = await retrieve_query_responses(results, mode)
+    query_results = await retrieve_query_responses(results, mode, user, project_id)
     
 
     if mode == "hybrid_rag":
@@ -121,6 +123,8 @@ async def rewrite_report_plan(state: ReportState, config: RunnableConfig):
     sections = state['sections']
     mode = config["configurable"]["mode"]
     feedback = state["feedback_on_report_plan"]
+    user_id = config["configurable"]["user_id"]
+    project_id = config["configurable"]["project_id"]
     plan_context = state["plan_context"]
     sections_str = "\n\n".join(
         f"Section: {section.name}\n"
@@ -155,7 +159,7 @@ async def rewrite_report_plan(state: ReportState, config: RunnableConfig):
         HumanMessage(content="Regenerate search queries that will help with planning the sections of the report based on the feedback. Only generate queries if needed. Do not generate queries that cover the same topics as the current report plan. Do not generate unnecessary queries or duplicates.")
     ])
     logger.info(f"Generated search queries after feedback: {results}")
-    query_results = await retrieve_query_responses(results, mode)
+    query_results = await retrieve_query_responses(results, mode, user_id, project_id)
 
     if mode == "hybrid_rag":
         source_str = query_results["internal_search_results"] +"\n\n"+ query_results["web_search_results"]

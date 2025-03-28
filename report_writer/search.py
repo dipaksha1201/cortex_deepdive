@@ -103,7 +103,8 @@ def google_search(query):
                             "uri": chunks[index].web.uri
                         })
                 mapped_grounding_supports.append(support_mapping)
-
+        
+        print("mapped_grounding_supports")
         grounding_metadata_string = generate_final_string(mapped_grounding_supports)
 
         if not final_response:

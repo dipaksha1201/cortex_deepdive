@@ -36,18 +36,18 @@ async def create_deepdive(user_id: str, project_id: str, request: ResearchReques
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/deepdive/{user_id}/{report_id}/continue")
-async def continue_deepdive(user_id: str, report_id: str, request: ResearchRequest):
+@api_router.post("/deepdive/{user_id}/{project_id}/{report_id}/continue")
+async def continue_deepdive(user_id: str, project_id: str, report_id: str, request: ResearchRequest):
     """Continue an existing deep dive research report"""
     try:
         researcher = DeepResearch()
         researcher.id = report_id
         if isinstance(request.feedback, bool) and request.feedback is True:
-            asyncio.create_task(continue_research(user_id, report_id, request.feedback))
+            asyncio.create_task(continue_research(user_id, project_id, report_id, request.feedback))
             researcher.update_status("in_progress")
             return {"report_id": report_id, "response": "starting-research"}
         else:
-            response = await continue_research(user_id, report_id, request.feedback)
+            response = await continue_research(user_id, project_id, report_id, request.feedback)
             researcher.update_plan(response["plan"] , response["description"])
             return response
     except Exception as e:

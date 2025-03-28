@@ -17,8 +17,11 @@ from .prompt import (
 )
 from logger import runner_logger as logger
 
-async def perform_research(state: SectionState):
+async def perform_research(state: SectionState, config: RunnableConfig):
     search_iterations = state["search_iterations"]
+    user_id = config["configurable"]["user_id"]
+    project_id = config["configurable"]["project_id"]
+    
     logger.info(f"Performing research for section: {state['section'].name}")
     logger.info(f"Search queries: {state['search_queries']}")
     logger.info(f"Internal search queries: {state['internal_search_queries']}")
@@ -50,7 +53,7 @@ async def perform_research(state: SectionState):
     # Perform internal search if queries exist
     if "internal_search_queries" in state and len(state["internal_search_queries"]) > 0:
         try:
-            internal_search_response = await perform_internal_knowledge_search(state["internal_search_queries"], "dipak")
+            internal_search_response = await perform_internal_knowledge_search(state["internal_search_queries"], user_id, project_id)
             
             # Check if internal search response is empty or indicates an error
             if not internal_search_response or (isinstance(internal_search_response, str) and 

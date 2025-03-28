@@ -49,11 +49,13 @@ def run():
 
 def run_search():
     print("Starting search...")
-    response = google_search("What is the current price of Amazon stock?")
-    print(response)    
+    response = google_search("""Find me the Change in Working Capital of 
+                                google 2023
+                                """)
+    logger.info(f"Search response: \n{response}")    
 
 if __name__ == "__main__":
-    # run_search()
+    run_search()
     # run_section_builder_test()
-    run_get_unique_types_by_user_id()
+    # run_get_unique_types_by_user_id()
     # run()

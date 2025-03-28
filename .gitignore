@@ -4,3 +4,5 @@ __pycache__
 .env
 .logger.py
 *.log
+runner.ipynb
+runner.py
