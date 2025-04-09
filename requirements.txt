@@ -13,3 +13,10 @@ langgraph-checkpoint-mongodb
 fastapi
 uvicorn
 pytz
+sec_api
+yfinance
+pandas
+mplfinance
+matplotlib
+numpy
+reportlab
