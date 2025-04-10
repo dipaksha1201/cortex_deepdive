@@ -6,13 +6,14 @@ These tools are designed to be used with Langchain.
 import os
 from textwrap import dedent
 from datetime import timedelta, datetime
-from typing import List, Annotated, Optional
+from typing import List, Annotated, Optional, Dict, Any
 from pydantic import Field
 from langchain_core.tools import tool
 from ..utilities import YFinanceUtils, SecUtils as SECUtils, FmpUtils as FMPUtils
 from logger import runner_logger as logger
 from dotenv import load_dotenv
 from zone import gemini_flash
+import pandas as pd
 load_dotenv()
 from langgraph.config import get_stream_writer
 
@@ -63,16 +64,24 @@ def analyze_income_stmt(
     # Save the income statement to a file for reference 
     response = gemini_flash.invoke(prompt)
     writer({"tool_status": f"Income statement analysis completed for {ticker_symbol}"})
+    # Convert DataFrame to a serializable format
+    # Reset the index to make timestamps regular columns
+    reset_df = income_stmt.reset_index()
+    # Convert to records format (list of dictionaries)
+    records = reset_df.to_dict(orient='records')
+    # Convert timestamps and NaN values
+    serializable_records = _convert_timestamps(records)
+    
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
         "file_type" : "text",
-        "attached_csv" : income_stmt.to_dict(orient='records'),
+        "attached_csv" : serializable_records,
         "artifact_name" : f"{ticker_symbol} - {fyear} Income Statement Analysis"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content
 
 
@@ -104,16 +113,24 @@ def analyze_balance_sheet(
     prompt = combine_prompt(instruction, section_text, df_string)
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Balance sheet analysis completed for {ticker_symbol}"})
+    # Convert DataFrame to a serializable format
+    # Reset the index to make timestamps regular columns
+    reset_df = balance_sheet.reset_index()
+    # Convert to records format (list of dictionaries)
+    records = reset_df.to_dict(orient='records')
+    # Convert timestamps and NaN values
+    serializable_records = _convert_timestamps(records)
+    
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
         "file_type" : "text",
-        "attached_csv" : balance_sheet.to_dict(orient='index'),
+        "attached_csv" : serializable_records,
         "artifact_name" : f"{ticker_symbol} - {fyear} Balance Sheet Analysis"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content   
 
 
@@ -144,16 +161,24 @@ def analyze_cash_flow(
     prompt = combine_prompt(instruction, section_text, df_string)
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Cash flow analysis completed for {ticker_symbol}"})
+    # Convert DataFrame to a serializable format
+    # Reset the index to make timestamps regular columns
+    reset_df = cash_flow.reset_index()
+    # Convert to records format (list of dictionaries)
+    records = reset_df.to_dict(orient='records')
+    # Convert timestamps and NaN values
+    serializable_records = _convert_timestamps(records)
+    
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
         "file_type" : "text",
-        "attached_csv" : cash_flow.to_dict(orient='index'),
+        "attached_csv" : serializable_records,
         "artifact_name" : f"{ticker_symbol} - {fyear} Cash Flow Analysis"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content 
 
 
@@ -184,16 +209,24 @@ def analyze_segment_stmt(
     prompt = combine_prompt(instruction, section_text, df_string)
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Segment analysis completed for {ticker_symbol}"})
+    # Convert DataFrame to a serializable format
+    # Reset the index to make timestamps regular columns
+    reset_df = income_stmt.reset_index()
+    # Convert to records format (list of dictionaries)
+    records = reset_df.to_dict(orient='records')
+    # Convert timestamps and NaN values
+    serializable_records = _convert_timestamps(records)
+    
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
         "file_type" : "text",
-        "attached_csv" : income_stmt.to_dict(orient='index'),
+        "attached_csv" : serializable_records,
         "artifact_name" : f"{ticker_symbol} - {fyear} Segment Analysis"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content
 
 
@@ -227,7 +260,7 @@ def income_summarization(
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Income summarization completed for {ticker_symbol}"})
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
@@ -235,7 +268,7 @@ def income_summarization(
         "attached_csv" : None,
         "artifact_name" : f"{ticker_symbol} - {fyear} Income Summary"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content
 
 
@@ -267,7 +300,7 @@ def get_risk_assessment(
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Risk assessment completed for {ticker_symbol}"})
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
@@ -275,7 +308,7 @@ def get_risk_assessment(
         "attached_csv" : None,
         "artifact_name" : f"{ticker_symbol} - {fyear} Risk Assessment"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content
 
 
@@ -314,7 +347,7 @@ def get_competitors_analysis(
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Competitors analysis completed for {ticker_symbol}"})
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : None,
         "output_type" : "ticker_artifact",
@@ -322,7 +355,7 @@ def get_competitors_analysis(
         "attached_csv" : None,
         "artifact_name" : f"{ticker_symbol} and {competitors} - Competitors Analysis"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content
 
 
@@ -352,7 +385,7 @@ def analyze_business_highlights(
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Business highlights analysis completed for {ticker_symbol}"})
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
@@ -360,7 +393,7 @@ def analyze_business_highlights(
         "attached_csv" : None,
         "artifact_name" : f"{ticker_symbol} - {fyear} Business Highlights"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content
 
 
@@ -396,7 +429,7 @@ def analyze_company_description(
     response = gemini_flash.invoke(prompt) 
     writer({"tool_status": f"Company description completed for {ticker_symbol}"})
     output = {
-        "tool_output" : response.content,
+        "output" : response.content,
         "ticker_symbol" : ticker_symbol,
         "fyear" : fyear,
         "output_type" : "ticker_artifact",
@@ -404,7 +437,7 @@ def analyze_company_description(
         "attached_csv" : None,
         "artifact_name" : f"{ticker_symbol} - {fyear} Company Description"
     }
-    writer(output)
+    writer({"tool_output" : output})
     return response.content 
 
 
@@ -465,3 +498,17 @@ def _format_bvps(ticker_symbol, date_str):
         return f"{float(bvps):.2f}"
     except (ValueError, TypeError):
         return "N/A"
+
+
+def _convert_timestamps(obj: Any) -> Any:
+    """Recursively convert Pandas Timestamps to ISO format strings."""
+    if isinstance(obj, dict):
+        return {k if not isinstance(k, pd.Timestamp) else k.isoformat(): _convert_timestamps(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_timestamps(item) for item in obj]
+    elif isinstance(obj, pd.Timestamp):
+        return obj.isoformat()
+    elif pd.isna(obj):
+        return None
+    else:
+        return obj

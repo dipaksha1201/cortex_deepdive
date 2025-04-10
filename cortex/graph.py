@@ -44,40 +44,64 @@ async def execute_step(state: PlanExecute, config: RunnableConfig):
 
 async def plan_step(state: PlanExecute):
     print("Planning...")
-    plan = [   "Step 1: Analyze Companies 2024 financials using the following tool:\n- `analyze_balance_sheet`",
+    # plan = [   "Step 1: Analyze Companies 2024 financials using the following tool:\n- `analyze_balance_sheet`",
     
-    "Step 2: Analyze Companies 2024 financials using the following tool:\n- `analyze_cash_flow`\n- ",
+    # "Step 2: Analyze Companies 2024 financials using the following tool:\n- `analyze_cash_flow`\n- ",
     
-    "Step 3: Analyze Companies 2024 financials using the following tool:\n- `analyze_income_stmt`\n",
-    "Step 4: Analyze Companies 2024 financials using the following tool:\n- `analyze_segment_stmt`\n",
-    "Step 5: Analyze Companies 2024 financials using the following tool:\n- `income_summarization`\n",
+    # "Step 3: Analyze Companies 2024 financials using the following tool:\n- `analyze_income_stmt`\n",
+    # "Step 4: Analyze Companies 2024 financials using the following tool:\n- `analyze_segment_stmt`\n",
+    # "Step 5: Analyze Companies 2024 financials using the following tool:\n- `income_summarization`\n",
     
-    "Step 6: Use `get_competitors_analysis` to compare financial metrics between the requested companies. Only use data from the financial metrics table for competitor analysis. Remove duplicate or similar sentences elsewhere.",
+    # "Step 6: Use `get_competitors_analysis` to compare financial metrics between the requested companies. Only use data from the financial metrics table for competitor analysis. Remove duplicate or similar sentences elsewhere.",
     
-    "Step 7: Use `get_risk_assessment` to extract the top 3 risks identified in Companies 10-K report.",
+    # "Step 7: Use `get_risk_assessment` to extract the top 3 risks identified in Companies 10-K report.",
     
-    "Step 8: Write three paragraphs (150–160 words each) for:\n- Business Overview\n- Market Position\n- Operating Results \n using insights from Steps 2 and 3.",
+    # "Step 8: Write three paragraphs (150–160 words each) for:\n- Business Overview\n- Market Position\n- Operating Results \n using insights from Steps 2 and 3.",
     
-    "Step 9: Write two paragraphs (500–600 words each) for:\n- Risk Assessment (based on Step 4)\n- Competitors Analysis (only using the financial metrics table per instructions)",
+    # "Step 9: Write two paragraphs (500–600 words each) for:\n- Risk Assessment (based on Step 4)\n- Competitors Analysis (only using the financial metrics table per instructions)",
     
-    "Step 10: Generate Detailed report with appropriate markdown formatting using all the data collected and analyzed in the past steps with the following sections:\n- Business Overview\n- Market Position\n- Operating Results\n",
+    # "Step 10: Generate Detailed report with appropriate markdown formatting using all the data collected and analyzed in the past steps with the following sections:\n- Business Overview\n- Market Position\n- Operating Results\n",
+    # ]
+
+    plan = [
+        "Analyze Companies 2024 financials using the following tool:\n- `analyze_balance_sheet`",
+        "Analyze Companies 2024 financials using the following tool:\n- `analyze_cash_flow`\n-",
+        "Write three paragraphs (150–160 words each) for:\n- Business Overview\n- Market Position\n- Operating Results \n using insights from Steps 1 and 2."
     ]
     plan_text = "\n".join(f"{i+1}. {step}" for i, step in enumerate(plan))
     plan = await planner.ainvoke({"objective": state["input"], "plan": plan_text}) 
     print(plan)
     print("\n------------\n")
-    return {"plan": plan.steps}
+    return {"plan": plan.steps} 
     # return {"plan": ["Analyze GOOGL's 2024 balance sheet"]}
 
 
 async def replan_step(state: PlanExecute):
     writer = get_stream_writer()
     writer({"status" : "Reasoning"})
-    output = await replanner.ainvoke(state)
-    writer({"instructor_update" : output.update})
-    if len(output.plan) == 0:
-        return {"response": output.update}
-    return {"plan": output.plan}
+    try:
+        output = await replanner.ainvoke(state)
+        if output is None:
+            error_msg = "Replanner returned None. Using default plan continuation."
+            logger.error(error_msg)
+            writer({"instructor_update" : error_msg})
+            # Return the current plan without the completed step
+            return {"response" : "Error occurred during workflow execution"}
+        
+        writer({"instructor_update" : output.update})
+        if len(output.plan) == 0:
+            return {"response": output.update}
+        return {"plan": output.plan}
+    except Exception as e:
+        error_msg = f"Error in replan_step: {str(e)}"
+        logger.error(error_msg)
+        writer({"instructor_update" : error_msg})
+        # Fallback to continuing with the current plan
+        if state["plan"] and len(state["plan"]) > 1:
+            return {"plan": state["plan"][1:]}
+        else:
+            return {"response": "Task completed with errors. Please check the logs."}
+
 
 
 def should_end(state: PlanExecute):

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from controller.deep_dive import api_router
+from controller.maestro import router as maestro_api_router
 import uvicorn
 
 app = FastAPI(
@@ -20,6 +21,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(api_router, prefix="/api", tags=["API"])
+app.include_router(maestro_api_router, prefix="/api", tags=["maestro"])
 
 @app.get("/")
 async def root():
